@@ -1,0 +1,109 @@
+{
+  "variants": {
+    "a": {
+      "label": "A_standard_baseline_blend",
+      "macro_f1": 0.5912,
+      "cohen_kappa": 0.7017,
+      "under_triage_pct": 15.22,
+      "over_triage_pct": 13.06,
+      "severe_under_triage_pct": 0.57
+    },
+    "b": {
+      "label": "B_asym_class_weights",
+      "macro_f1": 0.5474,
+      "cohen_kappa": 0.6593,
+      "under_triage_pct": 7.73,
+      "over_triage_pct": 23.31,
+      "severe_under_triage_pct": 0.2,
+      "per_class_f1": {
+        "esi1": 0.7052,
+        "esi2": 0.691,
+        "esi3": 0.7167,
+        "esi4": 0.4436,
+        "esi5": 0.1805
+      }
+    },
+    "c": {
+      "label": "C_directional_sample_weights",
+      "macro_f1": 0.4751,
+      "cohen_kappa": 0.6345,
+      "under_triage_pct": 6.82,
+      "over_triage_pct": 24.21,
+      "severe_under_triage_pct": 0.18,
+      "per_class_f1": {
+        "esi1": 0.6974,
+        "esi2": 0.6924,
+        "esi3": 0.7302,
+        "esi4": 0.1238,
+        "esi5": 0.1318
+      }
+    },
+    "a_thresh": {
+      "label": "A_standard_thresh",
+      "macro_f1": 0.5969,
+      "cohen_kappa": 0.701,
+      "under_triage_pct": 14.5,
+      "over_triage_pct": 13.18,
+      "severe_under_triage_pct": 0.52,
+      "multipliers": [
+        0.7177,
+        1.027,
+        0.9961,
+        0.8362,
+        1.303
+      ]
+    },
+    "b_thresh": {
+      "label": "B_asym_class_weights_thresh",
+      "macro_f1": 0.5775,
+      "cohen_kappa": 0.6986,
+      "under_triage_pct": 15.44,
+      "over_triage_pct": 12.22,
+      "severe_under_triage_pct": 0.56,
+      "per_class_f1": {
+        "esi1": 0.707,
+        "esi2": 0.6878,
+        "esi3": 0.775,
+        "esi4": 0.5331,
+        "esi5": 0.1848
+      },
+      "multipliers": [
+        0.2134,
+        0.2364,
+        0.6272,
+        1.2193,
+        1.5112
+      ]
+    },
+    "c_thresh": {
+      "label": "C_directional_sample_weights_thresh",
+      "macro_f1": 0.5585,
+      "cohen_kappa": 0.6892,
+      "under_triage_pct": 15.46,
+      "over_triage_pct": 13.09,
+      "severe_under_triage_pct": 0.65,
+      "per_class_f1": {
+        "esi1": 0.6955,
+        "esi2": 0.6907,
+        "esi3": 0.7627,
+        "esi4": 0.5182,
+        "esi5": 0.1255
+      },
+      "multipliers": [
+        0.4435,
+        0.5381,
+        0.7859,
+        3.2879,
+        2.9286
+      ]
+    }
+  },
+  "literature_benchmarks": {
+    "pooled_human_kappa_mirhaghi_2015": 0.791,
+    "live_patient_nurse_expert_kappa": 0.694,
+    "scenario_based_expert_kappa": 0.824,
+    "ivanov_kate_accuracy": 0.757,
+    "acs_cot_undertriage_target_pct": 5.0,
+    "sax_2023_black_relative_undertriage_risk_pct": 18.5
+  }
+}

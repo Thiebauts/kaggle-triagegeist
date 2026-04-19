@@ -1,0 +1,15 @@
+{
+  "_about": "Per-age-band under-triage rates at the standard operating point and after applying the asymmetric 2.5x threshold multiplier. Used by report Figure 9.1 (bias_audit_disparities). Source: filtered from the overnight Azure run's bias_audit_single_axis.csv (standard) and bias_audit_with_asymmetric.csv (asymmetric_2.5x), keeping only the age_group axis. Weighted average over N reproduces the headline overall rates of 15.22% (standard) and 6.10% (asymmetric).",
+  "dataset": "mimic-iv-ed",
+  "n_total": 418025,
+  "overall_ut_standard": 0.1522,
+  "overall_ut_asymmetric_2_5x": 0.0610,
+  "acs_cot_target": 0.05,
+  "bands": [
+    {"age_band": "18-30", "n": 81034,  "ut_standard": 0.1894, "ut_asymmetric_2_5x": 0.0827},
+    {"age_band": "31-50", "n": 106986, "ut_standard": 0.1747, "ut_asymmetric_2_5x": 0.0684},
+    {"age_band": "51-65", "n": 105580, "ut_standard": 0.1425, "ut_asymmetric_2_5x": 0.0569},
+    {"age_band": "66-80", "n": 78760,  "ut_standard": 0.1202, "ut_asymmetric_2_5x": 0.0460},
+    {"age_band": "80+",   "n": 45665,  "ut_standard": 0.1107, "ut_asymmetric_2_5x": 0.0407}
+  ]
+}

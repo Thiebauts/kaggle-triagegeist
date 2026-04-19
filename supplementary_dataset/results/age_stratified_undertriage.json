@@ -1,0 +1,72 @@
+{
+  "by_age_group": [
+    {
+      "age_group": "18-30",
+      "n_under_triaged": 15345,
+      "pct_all_vitals_normal": 0.03,
+      "pct_news2_ge_5": 2.64,
+      "pct_shock_gt_1": 1.79,
+      "mean_true_acuity": 2.46,
+      "mean_pred_acuity": 3.51,
+      "mean_heartrate": 86.09,
+      "mean_sbp": 128.76,
+      "mean_dbp": 76.9,
+      "mean_resprate": 17.02,
+      "mean_o2sat": 99.21,
+      "mean_temperature": 98.09
+    },
+    {
+      "age_group": "31-65",
+      "n_under_triaged": 33732,
+      "pct_all_vitals_normal": 0.02,
+      "pct_news2_ge_5": 3.6,
+      "pct_shock_gt_1": 1.4,
+      "mean_true_acuity": 2.23,
+      "mean_pred_acuity": 3.27,
+      "mean_heartrate": 84.15,
+      "mean_sbp": 135.34,
+      "mean_dbp": 82.48,
+      "mean_resprate": 17.25,
+      "mean_o2sat": 98.69,
+      "mean_temperature": 97.98
+    },
+    {
+      "age_group": "66+",
+      "n_under_triaged": 14521,
+      "pct_all_vitals_normal": 0.01,
+      "pct_news2_ge_5": 5.63,
+      "pct_shock_gt_1": 1.25,
+      "mean_true_acuity": 1.91,
+      "mean_pred_acuity": 2.94,
+      "mean_heartrate": 79.89,
+      "mean_sbp": 142.2,
+      "mean_dbp": 74.3,
+      "mean_resprate": 17.53,
+      "mean_o2sat": 97.91,
+      "mean_temperature": 97.91
+    }
+  ],
+  "compensated_shock_test": [
+    {
+      "age_group": "18-30",
+      "n_high_acuity": 20931,
+      "pct_normal_hr_and_sbp": 49.48,
+      "pct_normal_hr": 61.55,
+      "pct_normal_sbp": 71.9
+    },
+    {
+      "age_group": "31-65",
+      "n_high_acuity": 77281,
+      "pct_normal_hr_and_sbp": 42.27,
+      "pct_normal_hr": 67.33,
+      "pct_normal_sbp": 58.77
+    },
+    {
+      "age_group": "66+",
+      "n_high_acuity": 65192,
+      "pct_normal_hr_and_sbp": 37.15,
+      "pct_normal_hr": 70.53,
+      "pct_normal_sbp": 50.04
+    }
+  ]
+}

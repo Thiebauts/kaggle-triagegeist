@@ -1,0 +1,8 @@
+{
+  "n_unique_train": 4949,
+  "n_unique_test": 4412,
+  "n_overlap": 4382,
+  "pct_train_covered": 96.61,
+  "pct_test_covered": 99.81,
+  "train_majority_label_accuracy": 0.9993
+}

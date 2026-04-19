@@ -1,0 +1,62 @@
+# Data (never commit)
+data/*.csv
+data/*.npy
+data/*.parquet
+physionet_data/
+*.npy
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Azure credentials
+.azureml/
+config.json
+azureml-*
+azure_config.json
+
+# Environment
+.env
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local tool configs
+CLAUDE.md
+.claude/
+
+# LaTeX build artefacts
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.synctex.gz
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+report/build/
+
+# Editors
+.vscode/
+.idea/
+
+# Local HTML previews from nbconvert / markdown-it
+*_preview.html

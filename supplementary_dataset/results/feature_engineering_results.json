@@ -1,0 +1,30 @@
+{
+  "baseline_features": 65,
+  "augmented_features": 77,
+  "baseline_f1": 0.5912,
+  "augmented_f1": 0.5569,
+  "augmented_kappa": 0.6836,
+  "augmented_undertriage": 0.1406,
+  "augmented_age_group_ut": {
+    "18-30": 0.1457,
+    "31-65": 0.1433,
+    "66+": 0.1327
+  },
+  "augmented_asym_metrics": {
+    "f1": 0.5591,
+    "kappa": 0.6871,
+    "undertriage_rate": 0.1125,
+    "weights_config": "Mild+"
+  },
+  "augmented_asym_age_group_ut": {
+    "18-30": 0.129,
+    "31-65": 0.1148,
+    "66+": 0.0978
+  },
+  "new_features_in_top20": [
+    "hr_age_zscore",
+    "n_age_abnormal_vitals"
+  ],
+  "rems_importance_rank": 66,
+  "n_folds": 5
+}

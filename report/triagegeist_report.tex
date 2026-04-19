@@ -1,0 +1,86 @@
+\documentclass[11pt,a4paper,openany]{report}
+
+\usepackage{thiebaut-report}
+\usepackage[backend=biber,style=authoryear,sorting=nyt,natbib=true]{biblatex}
+\addbibresource{references.bib}
+
+% Reduce chapter opening blank pages
+\let\cleardoublepage\clearpage
+
+\begin{document}
+
+% ============================================================
+% TITLE PAGE
+% ============================================================
+\vgtitlepage
+    {Triagegeist}
+    {Clinical Safety-Aware Emergency Triage Prediction}
+    {Thiebaut Schirmer}
+    {April 2026}
+
+\begin{center}
+\begin{minipage}{0.85\textwidth}
+\small\textit{
+A machine learning system for 5-level Emergency Severity Index prediction,
+validated on 418,100 real emergency department visits from the Beth Israel
+Deaconess Medical Center. This report describes the discovery of label leakage
+in a synthetic competition dataset, the pivot to real clinical data, and the
+development of an asymmetric safety framework calibrated to the clinical reality
+that under-triage is an order of magnitude more dangerous than over-triage.
+The system achieves Cohen's kappa of 0.701, matching the reliability of
+live-patient triage by human nurses reported in the Mirhaghi et al. (2015)
+meta-analysis of 40,579 cases.
+}
+\end{minipage}
+\end{center}
+
+\vspace{2em}
+
+% ============================================================
+% ABSTRACT (technical, ~1 page)
+% ============================================================
+\include{chapters/00_abstract}
+
+% ============================================================
+% TABLE OF CONTENTS
+% ============================================================
+\tableofcontents
+\clearpage
+
+% ============================================================
+% LIST OF FIGURES
+% ============================================================
+\listoffigures
+\clearpage
+
+% ============================================================
+% CHAPTERS
+% ============================================================
+\include{chapters/01_triage_problem}
+\include{chapters/02_competition_discovery}
+
+\include{chapters/chapter03_mimic}
+\include{chapters/chapter04_features}
+\include{chapters/chapter05_embeddings}
+\include{chapters/chapter06_architecture}
+\include{chapters/chapter07_results}
+\include{chapters/chapter08_safety}
+\include{chapters/chapter09_fairness}
+\include{chapters/chapter10_explainability}
+\include{chapters/chapter11_calibration}
+\include{chapters/chapter12_limitations}
+\include{chapters/chapter13_reflections}
+% \include{chapters/13_reflections}
+
+% ============================================================
+% APPENDICES
+% ============================================================
+\appendix
+\include{chapters/appendix_waterfalls}
+
+% ============================================================
+% BIBLIOGRAPHY
+% ============================================================
+\printbibliography[heading=bibintoc, title={References}]
+
+\end{document}

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 280" width="560" height="280">
+  <!-- Cream background, Van Gogh Almond Blossoms -->
+  <rect width="560" height="280" fill="#F2EBD9"/>
+
+  <!-- Top rule -->
+  <line x1="60" y1="68" x2="500" y2="68" stroke="#3D6B7E" stroke-width="1.4"/>
+
+  <!-- Title -->
+  <text x="280" y="125"
+        font-family="Georgia, 'Times New Roman', serif"
+        font-size="44" font-weight="400"
+        text-anchor="middle"
+        fill="#3D6B7E"
+        letter-spacing="7">TRIAGEGEIST</text>
+
+  <!-- Subtitle -->
+  <text x="280" y="158"
+        font-family="Georgia, serif"
+        font-size="15" font-style="italic"
+        text-anchor="middle"
+        fill="#5A5147">Clinical Safety-Aware Emergency Triage Prediction</text>
+
+  <!-- Bottom rule -->
+  <line x1="60" y1="190" x2="500" y2="190" stroke="#3D6B7E" stroke-width="1.4"/>
+
+  <!-- Author line: "Thiebaut Schirmer  •  April 2026", with gold accent dot -->
+  <text x="200" y="227"
+        font-family="Georgia, serif"
+        font-size="14"
+        text-anchor="end"
+        fill="#3A3530">Thiebaut Schirmer</text>
+  <circle cx="280" cy="222" r="4" fill="#C4A882"/>
+  <text x="360" y="227"
+        font-family="Georgia, serif"
+        font-size="14"
+        text-anchor="start"
+        fill="#3A3530">April 2026</text>
+
+  <!-- Footer note -->
+  <text x="280" y="253"
+        font-family="Georgia, serif"
+        font-size="10" font-style="italic"
+        text-anchor="middle"
+        fill="#8A7F6E">Triagegeist · Laitinen-Fredriksson Foundation</text>
+</svg>

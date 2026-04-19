@@ -1,0 +1,23 @@
+{
+  "variant_a": {
+    "label": "A_standard",
+    "macro_f1": 0.9972,
+    "under_triage_pct": 0.12,
+    "over_triage_pct": 0.0,
+    "severe_under_triage_pct": 0.01
+  },
+  "variant_b": {
+    "label": "B_asym_class_weights",
+    "macro_f1": 0.9972,
+    "under_triage_pct": 0.1,
+    "over_triage_pct": 0.01,
+    "severe_under_triage_pct": 0.01
+  },
+  "variant_c": {
+    "label": "C_directional_sample_weights",
+    "macro_f1": 0.9971,
+    "under_triage_pct": 0.13,
+    "over_triage_pct": 0.01,
+    "severe_under_triage_pct": 0.01
+  }
+}

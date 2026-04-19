@@ -1,0 +1,184 @@
+% ****************************************************************************************************
+% Chapter 6: Model Architecture, The Blend
+% ****************************************************************************************************
+
+\chapter{Model Architecture: The Blend}
+\label{ch:architecture}
+
+I now have my 115-dimensional input vector: 65 tabular features engineered from the MIMIC-IV-ED tables, concatenated with 50 PCA components of fine-tuned ClinicalBERT embeddings. I have a 5-class ordinal target (ESI-1 through ESI-5) on 418,100 ED visits. The question this chapter answers is what sits between them: the architecture that turns input features into predicted acuity levels.
+
+My final architecture is a blend of five gradient-boosted decision tree models, combined through convex weight optimisation, with per-class threshold optimisation applied to the final probabilities. None of the individual components is novel; each is a standard tool in applied machine learning. The choices are in how they are combined, why each is used, and what the alternatives would have cost.
+
+This chapter walks through the architecture from the ground up. I begin with the choice of base model family, why trees rather than neural networks for this problem, and build toward the full blend. Along the way I discuss cross-validation, stacking, and threshold optimisation, each of which carries its own subtleties in a clinical-ML context.
+
+\section{Why Gradient-Boosted Trees}
+
+For tabular data with mixed numeric and categorical features, missing values, and modest dataset size (418,100 rows is large by clinical standards but small by deep learning standards), gradient-boosted decision trees are the empirically dominant model family. They routinely win Kaggle competitions on structured data, and there is now a substantial theoretical and empirical literature explaining why \citep{grinsztajn2022trees, shwartz2022tabular}.
+
+The core reasons, informally, are these.
+
+First, trees handle missing values natively. In my dataset, missingness is pervasive, vital signs are often absent for critically ill patients, pain scores for unconscious ones, and so on. A gradient-boosted tree learns a default split direction for missing values during training, treating missingness as an informative signal rather than something to impute and forget. Neural networks, by contrast, require imputation before training, which can destroy the signal that missingness itself carries.
+
+Second, trees are invariant to feature scaling. A feature measured in beats per minute (heart rate, range 30--200) and a feature measured as a binary flag (comorbidity present, range 0--1) can be fed to a tree model without normalisation. Each split is made on a single feature at a time, so the relative scales of features do not matter. For a neural network, this would require careful normalisation; for a tree, it is free.
+
+Third, trees handle categorical features well without one-hot encoding. LightGBM and CatBoost both implement native categorical splits, which partition the feature values into subsets at each split. This is more statistically efficient than one-hot encoding for features with many categories, and some of mine, like \texttt{race} and \texttt{language}, have many.
+
+Fourth, trees are fast. Training a LightGBM model on my 115-feature, 418k-row dataset takes minutes on a CPU. Fine-tuning a BERT model takes hours on a GPU. When I need to run hundreds of experiments, cross-validation folds, and hyperparameter sweeps, the cost difference matters.
+
+\begin{notebox}[Why Not a Neural Network?]
+It is worth being direct: I did not seriously consider an end-to-end deep learning approach for the tabular portion of this task. The published evidence on tabular deep learning is mixed at best \citep{grinsztajn2022trees}, and my scale (half a million rows, 115 features) is not where neural networks typically dominate tree methods. Neural networks shine on unstructured data, images, audio, long text documents, and I already use a transformer for the chief complaint text. For the structured tabular features, trees are the right tool.
+
+A reader interested in testing this hypothesis could do so straightforwardly: replace the tree blend with a TabNet, FT-Transformer, or MLP and rerun the pipeline. I expect the results to be similar or worse, based on the published benchmarks, but I did not run this comparison myself.
+\end{notebox}
+
+\section{The Three Families}
+
+My blend uses three distinct gradient boosting implementations: LightGBM \citep{ke2017lightgbm}, XGBoost \citep{chen2016xgboost}, and CatBoost \citep{prokhorenkova2018catboost}. All three are gradient boosting, but each has subtly different defaults and strengths, and together they provide genuine ensemble diversity.
+
+\paragraph{LightGBM.} Developed at Microsoft, LightGBM is designed for speed. Its key innovation is \emph{gradient-based one-side sampling}, which focuses the training on examples with large gradients, together with \emph{leaf-wise growth} (rather than level-wise growth), which finds asymmetric tree structures more efficiently. In practice, LightGBM trains faster than XGBoost on most datasets, typically at very similar accuracy. It is my workhorse model, four of the five blend members are LightGBM variants.
+
+\paragraph{XGBoost.} The original gradient-boosted-trees library to gain widespread adoption, XGBoost is mature, well-documented, and has strong regularisation. Its tree-building algorithm uses a second-order Taylor expansion of the loss function (rather than LightGBM's first-order approximation), which can produce slightly different splits. The difference matters for ensemble diversity.
+
+\paragraph{CatBoost.} Developed at Yandex, CatBoost specialises in categorical feature handling through ordered target statistics rather than one-hot or LightGBM's native categorical splits. On datasets with heavy categorical content, as mine has, with demographic features, CatBoost sometimes catches patterns the other two miss. Its defaults are also more conservative (shallower trees, stronger regularisation), which provides useful ensemble diversity.
+
+In my final blend, XGBoost and CatBoost are not used as standalone blend members. Instead, they appear inside a \emph{stacked} member that combines all three libraries through an internal meta-learner. This structure was the result of iterative experimentation: an earlier design with seven standalone members (including separate XGBoost and CatBoost variants plus a focal-loss model) timed out during the Azure training run, and the streamlined five-member design that completed successfully turned out to perform at least as well.
+
+\begin{remarkbox}[The Value of Ensemble Diversity]
+The reason I use three different libraries, rather than four configurations of the same one, is statistical. An ensemble's error rate is minimised when the individual models make \emph{uncorrelated} errors. If all five of my blend members were LightGBM models with slightly different random seeds, they would produce highly correlated errors and the blend would offer little advantage over any single model. The stacked member, which combines LightGBM, XGBoost, and CatBoost internally, forces the blend to include models that fail in different ways, and the averaging smooths out their individual weaknesses.
+
+This is the same principle behind bagging and boosting: reduce variance by aggregating diverse learners.
+\end{remarkbox}
+
+\section{The Five Blend Members}
+
+My final blend consists of five models, listed in Table~\ref{tab:blend-members}. Each is trained on the same 115-feature input, on the same training folds, but with different configurations that give each model a distinct inductive bias.
+
+\begin{table}[htbp]
+ \centering
+ \caption[Five blend members]{The five models in the final blend. Four are LightGBM variants with different hyperparameters; the fifth is an internally stacked ensemble of LightGBM, XGBoost, and CatBoost combined through a logistic regression meta-learner. The blend weights, optimised via Nelder-Mead on out-of-fold predictions, are shown in the rightmost column. The \texttt{weighted} member dominates the blend at nearly half the total weight.}
+ \label{tab:blend-members}
+ \small
+ \begin{tabular}{llp{5.5cm}r}
+ \toprule
+ Member & Library & Key differentiator & Weight \\
+ \midrule
+ baseline & LightGBM & Standard hyperparameters: 200 trees, lr=0.05, 63 leaves & 10.8\% \\
+ weighted & LightGBM & Same as baseline + inverse-frequency class weights & 47.8\% \\
+ more\_trees & LightGBM & 800 estimators, lower learning rate (0.02) & 14.9\% \\
+ early\_stop & LightGBM & 2000 max trees with validation early-stopping (patience 100) & 10.3\% \\
+ stacked & LGB+XGB+CB & Internal 3-fold stacking: LightGBM, XGBoost, and CatBoost trained on inner folds, combined via logistic regression & 16.2\% \\
+ \bottomrule
+ \end{tabular}
+\end{table}
+
+The \texttt{baseline} member is the default LightGBM configuration: a reasonable trained model with no particular twists. The \texttt{weighted} variant addresses class imbalance by weighting each class inversely to its prevalence during training, pushing the model to care more about rare classes (ESI-1 and ESI-5). It dominates the blend at $47.8\%$ of the total weight, which is itself an informative finding: of all five members, the one that explicitly accounts for class imbalance contributes the most to the final prediction. The \texttt{more\_trees} and \texttt{early\_stop} variants explore the bias-variance tradeoff in opposite directions: one trains longer with a lower learning rate (lower bias, higher variance), the other trains until validation performance stops improving (a principled stopping criterion).
+
+The \texttt{stacked} member provides the cross-library diversity discussed above. It trains LightGBM, XGBoost, and CatBoost on inner cross-validation folds (3-fold, nested within each outer fold) and combines their out-of-fold predictions through a logistic regression meta-learner. This structure is itself a small ensemble within the larger blend. I tested standalone XGBoost and CatBoost members in an earlier design, but the internal-stacking approach proved more effective per blend slot: rather than dedicating separate blend positions to each library, the stacked member lets the inner meta-learner find the best combination of all three.
+
+\section{Cross-Validation: How I Train and Evaluate}
+
+Every machine learning project needs to answer a fundamental question: how do I measure generalisation? I cannot use the training data to evaluate performance, the model has memorised it. I must hold out some data that the model has not seen during training and measure performance on that held-out set.
+
+The simplest approach is a train/test split: set aside, say, 20\% of the data as a test set, train on the remaining 80\%, and report performance on the test set. This works but is wasteful: I lose 20\% of my training data permanently, and my performance estimate has substantial variance because it depends on which 20\% I happened to hold out. For a 418,100-row dataset, a single train/test split has enough data to be reliable in absolute terms, but it would be a significant loss in practice.
+
+I use \emph{stratified K-fold cross-validation} instead. The data is split into 5 equal folds. I train 5 separate models, each on 4 of the folds, and evaluate each on the fold it did not see. Every observation ends up in exactly one held-out fold, and every observation contributes to training for 4 of the 5 models. The final performance estimate is the average across the 5 held-out folds, and I recover per-observation predictions for every observation via the held-out predictions.
+
+\begin{notebox}[What Does ``Stratified'' Mean?]
+Stratified K-fold maintains the class distribution in each fold. If my dataset is 5\% ESI-1, 33\% ESI-2, 54\% ESI-3, 7\% ESI-4, and 0.3\% ESI-5, then each of the five folds should have approximately that same distribution. Without stratification, random splitting might assign most of the rare ESI-5 cases to a single fold, leaving the others with none. This would bias both training (some models wouldn't see enough ESI-5 cases) and evaluation (held-out folds without ESI-5 cases cannot produce meaningful ESI-5 metrics).
+
+Stratification is especially important for imbalanced datasets like mine. I stratify on the target variable (the ESI label) throughout the pipeline.
+\end{notebox}
+
+The random seed for the fold split is fixed at 42 for reproducibility. All five blend members use the same folds, so the out-of-fold predictions from each model are directly comparable.
+
+\section{Out-of-Fold Predictions and Stacking}
+
+When I have five models trained via cross-validation, a natural question is how to combine their predictions. The simplest approach is to average them: each model outputs a probability distribution over the five classes for each observation, and the blend prediction is the mean of those distributions. This works, but it treats all five models as equally reliable, which they are not.
+
+My approach is to optimise \emph{convex weights}: a set of non-negative weights summing to one, one per blend member, that minimise cross-entropy on the out-of-fold predictions. The optimisation is performed by Nelder-Mead over a softmax parameterisation (which enforces the constraint that weights are non-negative and sum to one), with multiple random restarts to avoid local minima.
+
+The critical subtlety is avoiding a specific form of leakage. The weights are optimised on \emph{out-of-fold predictions} rather than on the full training set's in-sample predictions. For each of the 5 folds, I take the predictions each base model made on the held-out fold (which it did not see during training) and use those for the weight optimisation. Every observation in the training set now has five base-model predictions, each of which was made on unseen data. These are honest predictions, and the weights learned from them reflect genuine relative model quality.
+
+\begin{lstlisting}[language=Python, caption={Convex blend weight optimisation. Each base model produces a 5-dimensional probability vector per observation. Nelder-Mead finds the weights that minimise cross-entropy on the pooled out-of-fold predictions.}]
+from scipy.optimize import minimize
+from scipy.special import softmax
+
+# oof_dict: {model_name: (n_samples, 5) array of OOF probabilities}
+probs = [oof_dict[name] for name in model_names]
+
+def neg_f1(raw_w):
+ w = softmax(raw_w) # non-negative, sums to 1
+ blend = sum(wi * p for wi, p in zip(w, probs))
+ yp = classes[np.argmax(blend, axis=1)]
+ return -f1_score(y_true, yp, average="macro")
+
+best = minimize(neg_f1, x0=np.zeros(len(probs)), method="Nelder-Mead")
+weights = softmax(best.x) # final blend weights
+\end{lstlisting}
+
+The resulting weights are not uniform. The \texttt{weighted} member receives $47.8\%$ of the total weight, nearly half, reflecting the fact that explicit class-weight handling is the single most valuable modelling decision in this pipeline. The \texttt{stacked} member receives $16.2\%$, the \texttt{more\_trees} member $14.9\%$, and the \texttt{baseline} and \texttt{early\_stop} members roughly $10\%$ each.
+
+I also tested a logistic regression meta-learner as an alternative combination strategy: training a multinomial logistic regression on the concatenated out-of-fold probabilities ($5 \times 5 = 25$ input features). This produced results essentially identical to the convex weight approach, within $0.001$ F1, confirming that the combination task is simple enough that a linear model and a weighted average converge on the same solution. I retained the convex-weight approach because it is more interpretable: each model gets a single weight, readable as ``how much does this model contribute to the final prediction?''
+
+\section{Threshold Optimisation}
+
+Once the meta-learner produces a final probability distribution over the five ESI classes, I need to translate this to a discrete prediction. The obvious choice is \emph{argmax}, pick the class with highest predicted probability. This is what most classifiers do by default.
+
+But argmax is not always the right decision rule in a clinical context. If the model's output is $[0.15, 0.50, 0.30, 0.04, 0.01]$ across ESI-1 through ESI-5, argmax gives ESI-2. But the model is assigning substantial probability (15\%) to ESI-1, which is the more critical class. A clinically risk-aware decision might reasonably bump this prediction up to ESI-1, accepting some over-triage in exchange for reduced risk of missing a critical patient.
+
+I implement this through \emph{per-class threshold multipliers}. Rather than using argmax directly, I scale each class's predicted probability by a class-specific multiplier before taking the argmax:
+\[
+\hat{y} = \arg\max_c (\theta_c \cdot p_c)
+\]
+where $p_c$ is the predicted probability of class $c$ and $\theta_c$ is the class-specific multiplier. Setting $\theta_1 = 2.5$, for example, doubles the effective probability of ESI-1 in the argmax, pushing the decision boundary so that marginal ESI-2 predictions become ESI-1 instead.
+
+The set of multipliers $(\theta_1, \theta_2, \theta_3, \theta_4, \theta_5)$ is optimised using the Nelder-Mead simplex algorithm, a derivative-free optimiser that works well for low-dimensional continuous problems with noisy objectives. The objective can be whatever metric I care about: macro F1, under-triage rate, a composite of several. I present detailed results across different objectives in Chapter~\ref{ch:safety}, where threshold optimisation becomes the central tool for exploring the safety-accuracy tradeoff.
+
+\begin{notebox}[Why Nelder-Mead?]
+Nelder-Mead, invented in 1965, is one of the oldest numerical optimisation algorithms still in common use. It works by maintaining a simplex of points in parameter space and iteratively reflecting, expanding, contracting, or shrinking the simplex based on function values at the vertices. It requires no gradients, handles noisy objectives reasonably, and converges in a modest number of iterations for low-dimensional problems.
+
+For my 5-parameter threshold optimisation, Nelder-Mead converges in roughly 100 to 200 function evaluations, with each evaluation taking about 50 milliseconds on my out-of-fold predictions. The whole optimisation runs in under a minute. For higher-dimensional problems (hundreds or thousands of parameters) I would use gradient-based methods; for this problem, Nelder-Mead is perfect.
+\end{notebox}
+
+The choice to use per-class threshold multipliers, rather than shifting decision boundaries in a more complex way, or re-training with different loss functions, reflects an important design decision. Threshold optimisation is a post-hoc transformation: it does not change the underlying probability estimates, only the decision rule I apply to them. This has two advantages.
+
+First, threshold optimisation is cheap. Optimising 5 multipliers takes seconds; retraining with a different loss function takes hours. I can explore dozens of operating points without retraining.
+
+Second, threshold optimisation is transparent. I can state exactly what my decision rule is: ``predict ESI-1 whenever $2.5 \cdot p_1 > p_c$ for all other classes $c$.'' This is inspectable and auditable in a way that a re-trained model with custom loss weights is not.
+
+These advantages matter in a clinical context, where the ability to adjust the operating point without retraining is valuable. A hospital deploying the system might want a more conservative threshold configuration than the one I would use for a research paper. With threshold optimisation, this is straightforward. With loss-function engineering, it is not.
+
+\section{Dead Ends}
+
+Several architectural choices did not work and were discarded.
+
+\paragraph{Ordinal LightGBM (Frank and Hall 2001).} Because ESI is an ordinal variable, levels 1 through 5 are ranked, not unordered categories, I tried an ordinal-classification approach. Specifically, the Frank and Hall decomposition \citep{frank2001ordinal} trains 4 binary classifiers for the cumulative probability $P(y > k)$ for $k \in \{1, 2, 3, 4\}$, then recovers the full probability distribution by differencing consecutive cumulative probabilities. The intuition is that this exploits the ordinal structure of the label, which multiclass classification does not.
+
+In practice, it did not improve over standard multiclass LightGBM. The reason, I suspect, is that gradient-boosted trees already discover the ordinal structure implicitly through their splits: a tree that distinguishes ESI-1 from ESI-3 will generally first distinguish ESI-1 from ``not ESI-1,'' which is exactly the cumulative formulation. The explicit ordinal structure was redundant.
+
+\paragraph{Directional ordinal penalty (sample weights that punish under-triage).} In a separate experiment described in detail in Chapter~\ref{ch:safety}, I tried using sample weights during training to penalise under-triage errors more heavily than over-triage errors. The idea was to bake the asymmetric risk structure directly into training rather than applying it post-hoc via thresholds. The approach worked in one sense, it cut under-triage rate from 15.2\% to 6.8\%, but it cost 0.12 F1 in overall macro performance. More importantly, and as I develop in Chapter~\ref{ch:safety}, threshold optimisation after directional training actually \emph{undoes} the asymmetry: the two approaches are substitute rather than complementary strategies.
+
+\paragraph{Focal loss (LightGBM with $\gamma = 2$).} I tested a LightGBM variant using focal loss \citep{lin2017focal}, originally designed for dense object detection, which down-weights easy examples and focuses on hard ones. This is a popular choice for imbalanced classification. In an earlier seven-member blend design, a focal-loss member was included alongside standalone XGBoost and CatBoost variants. The seven-member design timed out during the Azure training run, and when I re-ran with a streamlined five-member design, the focal-loss member was dropped. Its marginal contribution to the blend had been small in preliminary experiments, and the \texttt{weighted} member (which addresses imbalance through class weights) proved more effective.
+
+\paragraph{Deeper stacking.} I tested a neural network meta-learner (a small MLP with one hidden layer of 32 units) as the blend combination strategy. The result was essentially identical to the convex weight approach, with slightly higher variance across random seeds. A more complex combiner did not help.
+
+\section{Computational Cost}
+
+For completeness, a note on runtime. Training the full 5-model blend on the 418,100-row MIMIC cohort takes approximately 40 minutes on an Azure Standard\_F16s\_v2 CPU (16 vCPUs, 32 GB RAM). Most of this time is the four LightGBM variants plus the stacked member's internal XGBoost and CatBoost training. The PCA-on-embeddings step is negligible (seconds per fold). The meta-learner and threshold optimisation together take under a minute. The fine-tuned ClinicalBERT embedding extraction, described in Chapter~\ref{ch:embeddings}, is the expensive one-time step on a GPU, but it does not need to be repeated for every blend experiment.
+
+The total Azure compute cost for this project, across all experiments described in this report, was approximately \$22. Most of this was the CPU training time; the T4 GPU fine-tuning accounts for about \$2. The economics of gradient-boosted trees on moderate-size clinical datasets are favourable.
+
+\section{Architecture at a Glance}
+
+The full architecture, end to end:
+
+\begin{itemize}
+ \item \textbf{Input}: 115-dimensional feature vector (65 tabular + 50 PCA components of fine-tuned ClinicalBERT embeddings), per ED visit.
+ \item \textbf{Preprocessing within each fold}: median imputation for missing numeric values, no scaling (trees are scale-invariant), native handling of categorical variables by LightGBM and CatBoost, PCA fit on training-fold embeddings and applied to validation-fold embeddings.
+ \item \textbf{Base models}: five gradient-boosted tree models, four LightGBM variants (baseline, weighted, more\_trees, early\_stop) plus one internally stacked ensemble (LightGBM + XGBoost + CatBoost combined via logistic regression).
+ \item \textbf{Cross-validation}: stratified 5-fold, with each observation contributing one out-of-fold prediction per base model.
+ \item \textbf{Blend combination}: convex weight optimisation via Nelder-Mead on softmax-constrained weights, fitted on pooled out-of-fold predictions.
+ \item \textbf{Final transformation}: per-class threshold multipliers, optimised via Nelder-Mead for a configurable objective.
+\end{itemize}
+
+With the architecture in place, I can turn to the results. The next chapter presents the headline quantitative findings on MIMIC-IV-ED, benchmarks my model's performance against the published human-reliability literature, and provides the first detailed look at the confusion structure of my predictions. I then spend the chapter after that, Chapter~\ref{ch:safety}, on the central methodological contribution of the project: the comparison of two strategies for encoding clinical risk tolerance.

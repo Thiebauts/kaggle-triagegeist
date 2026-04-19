@@ -1,0 +1,14 @@
+{
+  "original_f1": 0.5912,
+  "calibrated_f1": 0.5766,
+  "original_thresh_f1": 0.5969,
+  "calibrated_thresh_f1": 0.5985,
+  "calibration_improved_curve": true,
+  "calibrated_ut_at_5pct": {
+    "multiplier": 3.25,
+    "macro_f1": 0.4401,
+    "undertriage_rate": 0.0496,
+    "severe_undertriage_rate": 0.0012,
+    "overtriage_rate": 0.2878
+  }
+}

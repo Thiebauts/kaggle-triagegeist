@@ -1,0 +1,55 @@
+{
+  "dataset": "mimic-iv-ed",
+  "total_samples": 418100,
+  "overall_undertriage_rate_std": 0.1522,
+  "overall_undertriage_rate_asymmetric": 0.061,
+  "worst_subgroup_std": {
+    "level": 3,
+    "axis": "age_group+sex+race",
+    "subgroup": "18-30|M|ASIAN",
+    "n": 1228,
+    "undertriage_rate": 0.2231,
+    "severe_undertriage_rate": 0.0171,
+    "overtriage_rate": 0.0904,
+    "macro_f1": 0.5759,
+    "source": "standard"
+  },
+  "best_subgroup_std": {
+    "level": 3,
+    "axis": "age_group+sex+race",
+    "subgroup": "80+|F|ASIAN",
+    "n": 221,
+    "undertriage_rate": 0.0905,
+    "severe_undertriage_rate": 0.0045,
+    "overtriage_rate": 0.1674,
+    "macro_f1": 0.5634,
+    "source": "standard"
+  },
+  "worst_subgroup_asym": {
+    "level": 3,
+    "axis": "age_group+sex+race",
+    "subgroup": "18-30|M|ASIAN",
+    "n": 1228,
+    "undertriage_rate": 0.1173,
+    "severe_undertriage_rate": 0.0024,
+    "overtriage_rate": 0.2077,
+    "macro_f1": 0.5259,
+    "source": "asymmetric_2.5x"
+  },
+  "best_subgroup_asym": {
+    "level": 3,
+    "axis": "age_group+sex+race",
+    "subgroup": "80+|M|OTHER",
+    "n": 4250,
+    "undertriage_rate": 0.0372,
+    "severe_undertriage_rate": 0.0007,
+    "overtriage_rate": 0.3019,
+    "macro_f1": 0.415,
+    "source": "asymmetric_2.5x"
+  },
+  "disparity_ratio_before_asymmetric": 2.465,
+  "disparity_ratio_after_asymmetric": 3.153,
+  "disparity_reduced": false,
+  "subgroups_worsened_by_asymmetric": [],
+  "sax_2023_black_relative_undertriage_risk_pct": 18.5
+}

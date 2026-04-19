@@ -1,0 +1,22 @@
+# Deep learning & transformers
+torch>=2.1.0
+transformers>=4.40.0
+sentence-transformers>=2.5.0
+
+# Gradient boosting
+lightgbm>=4.3.0
+xgboost>=2.0.0
+catboost>=1.2.0
+
+# Explainability
+shap>=0.45.0
+
+# Core scientific stack
+numpy>=1.24.0
+pandas>=2.1.0
+scipy>=1.11.0
+scikit-learn>=1.4.0
+
+# Plotting
+matplotlib>=3.8.0
+seaborn>=0.13.0

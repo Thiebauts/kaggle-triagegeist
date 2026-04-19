@@ -1,0 +1,21 @@
+{
+  "target_pct": 5.0,
+  "meets_5pct_target": {
+    "a": false,
+    "b": false,
+    "c": false,
+    "a_thresh": false,
+    "b_thresh": false,
+    "c_thresh": false
+  },
+  "f1_at_5pct_target": null,
+  "best_variant_at_5pct": null,
+  "variant_undertriage_rates": {
+    "a": 15.22,
+    "b": 7.73,
+    "c": 6.82,
+    "a_thresh": 14.5,
+    "b_thresh": 15.44,
+    "c_thresh": 15.46
+  }
+}

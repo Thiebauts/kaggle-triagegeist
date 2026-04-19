@@ -1,0 +1,335 @@
+% ****************************************************************************************************
+% thiebaut-report.sty
+% A custom LaTeX style for short reports (20-30 pages)
+% Inspired by ClassicThesis and Van Gogh's Almond Blossoms palette
+% ****************************************************************************************************
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{thiebaut-report}[2026/03/03 v1.0 Thiebaut Report Style]
+
+% ****************************************************************************************************
+% 1. Colors — Almond Blossoms palette
+%    Soft sky blue, white, gentle greens, with warm accents
+% ****************************************************************************************************
+\RequirePackage[table]{xcolor}
+
+% Primary palette
+\definecolor{vg-sky}{HTML}{7BA7BC}        % soft blue — branches against sky
+\definecolor{vg-petal}{HTML}{E8DDD3}      % warm petal white / cream
+\definecolor{vg-branch}{HTML}{5C4033}     % warm brown — tree branches
+\definecolor{vg-leaf}{HTML}{6B8E6B}       % muted sage green
+\definecolor{vg-blossom}{HTML}{C4A882}    % golden ochre accent
+
+% Functional colors derived from palette
+\definecolor{vg-heading}{HTML}{3D6B7E}    % darker sky blue for headings
+\definecolor{vg-link}{HTML}{5C4033}       % brown for hyperlinks
+\definecolor{vg-cite}{HTML}{6B8E6B}       % sage green for citations
+\definecolor{vg-url}{HTML}{7BA7BC}        % sky blue for URLs
+\definecolor{vg-rule}{HTML}{7BA7BC}       % sky blue for decorative rules
+\definecolor{vg-box-bg}{HTML}{F4F0EB}     % very light cream for tinted boxes
+\definecolor{vg-box-frame}{HTML}{C4D7DF}  % pale blue for box borders
+\definecolor{vg-caption}{HTML}{3D6B7E}    % heading blue for caption labels
+\definecolor{vg-code-bg}{HTML}{F7F4F0}    % warm off-white for code
+
+% ****************************************************************************************************
+% 2. Geometry — moderate margins on A4
+% ****************************************************************************************************
+\RequirePackage[
+    a4paper,
+    left=2.5cm,
+    right=2.5cm,
+    top=3cm,
+    bottom=3cm,
+    headheight=14pt
+]{geometry}
+
+% ****************************************************************************************************
+% 3. Fonts — Palatino with matching math
+% ****************************************************************************************************
+\RequirePackage[T1]{fontenc}
+\RequirePackage[utf8]{inputenc}
+\RequirePackage{mathpazo}
+\RequirePackage[scaled=0.85]{beramono}    % monospace for code
+\RequirePackage[scaled=0.88]{berasans}    % sans-serif for variety
+\linespread{1.06}
+
+% ****************************************************************************************************
+% 4. Microtypography
+% ****************************************************************************************************
+\RequirePackage{microtype}
+
+% ****************************************************************************************************
+% 5. Heading styles — spaced small caps with colored rules
+% ****************************************************************************************************
+\RequirePackage{titlesec}
+\RequirePackage{textcase}
+
+\newcommand{\spacedsc}[1]{%
+    \textls[80]{\textsc{\MakeTextLowercase{#1}}}%
+}
+
+% Chapter: large spaced small caps, colored rule below
+\titleformat{\chapter}[display]
+    {}
+    {\color{vg-heading}\Large\spacedsc{Chapter~\thechapter}}
+    {0.5em}
+    {\color{vg-heading}\LARGE\spacedsc}
+    [\vspace{0.3em}{\color{vg-rule}\titlerule[0.6pt]}]
+
+\titlespacing*{\chapter}{0pt}{40pt}{25pt}
+
+% Section: medium spaced small caps
+\titleformat{\section}
+    {\color{vg-heading}\Large}
+    {\thesection}
+    {0.8em}
+    {\spacedsc}
+    [\vspace{0.15em}{\color{vg-rule}\titlerule[0.4pt]}]
+
+\titlespacing*{\section}{0pt}{2.5ex plus 1ex minus .2ex}{1.5ex plus .2ex}
+
+% Subsection: smaller, no rule
+\titleformat{\subsection}
+    {\color{vg-heading}\large}
+    {\thesubsection}
+    {0.8em}
+    {\spacedsc}
+
+\titlespacing*{\subsection}{0pt}{2ex plus 0.5ex minus .2ex}{1ex plus .2ex}
+
+% Subsubsection: italic, no small caps
+\titleformat{\subsubsection}
+    {\color{vg-heading}\normalsize\itshape}
+    {\thesubsubsection}
+    {0.8em}
+    {}
+
+% ****************************************************************************************************
+% 6. Headers and footers — elegant with thin rule
+% ****************************************************************************************************
+\RequirePackage{fancyhdr}
+\RequirePackage{etoolbox}
+
+\pagestyle{fancy}
+\fancyhf{}
+
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\patchcmd{\headrule}
+    {\hrule}
+    {\color{vg-rule}\hrule}
+    {}{}
+
+\fancyhead[L]{\small\spacedsc{\leftmark}}
+\fancyhead[R]{\small\thepage}
+
+\fancypagestyle{plain}{%
+    \fancyhf{}%
+    \fancyfoot[C]{\small\thepage}%
+    \renewcommand{\headrulewidth}{0pt}%
+}
+
+% ****************************************************************************************************
+% 7. Table of contents — clean, no dots
+% ****************************************************************************************************
+\RequirePackage{titletoc}
+
+\titlecontents{chapter}
+    [1.5em]
+    {\addvspace{1em}\bfseries\color{vg-heading}}
+    {\contentslabel{1.5em}}
+    {\hspace*{-1.5em}}
+    {\hfill\contentspage}
+
+\titlecontents{section}
+    [3.8em]
+    {\addvspace{0.2em}}
+    {\contentslabel{2.3em}}
+    {\hspace*{-2.3em}}
+    {\hfill\contentspage}
+
+\titlecontents{subsection}
+    [6.1em]
+    {}
+    {\contentslabel{2.3em}}
+    {\hspace*{-2.3em}}
+    {\hfill\contentspage}
+
+% ****************************************************************************************************
+% 8. Captions — colored label + regular description
+% ****************************************************************************************************
+\RequirePackage{caption}
+\captionsetup{
+    font=small,
+    labelfont={color=vg-caption,bf},
+    labelsep=endash,
+    margin=1em
+}
+
+\RequirePackage{subfig}
+
+% ****************************************************************************************************
+% 9. Hyperlinks
+% ****************************************************************************************************
+\RequirePackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=vg-link,
+    citecolor=vg-cite,
+    urlcolor=vg-url,
+    bookmarksnumbered=true,
+    bookmarksopen=true,
+    pdfstartview=FitV
+}
+
+% ****************************************************************************************************
+% 10. Tinted boxes for notes and remarks
+% ****************************************************************************************************
+\RequirePackage{tcolorbox}
+\tcbuselibrary{skins,breakable}
+
+% Visible inter-paragraph spacing inside tinted boxes. tcolorbox's `before
+% upper` hook runs at the start of the box body and is group-scoped, so the
+% \parskip / \parindent changes apply only inside the box and never leak to
+% surrounding body text.
+\newcommand{\vgboxparskip}{%
+    \setlength{\parskip}{0.5ex plus 0.1ex}%
+    \setlength{\parindent}{0pt}%
+}
+
+\newtcolorbox{notebox}[1][Note]{%
+    enhanced,
+    breakable,
+    colback=vg-box-bg,
+    colframe=vg-box-frame,
+    coltitle=vg-heading,
+    fonttitle=\bfseries\small\spacedsc,
+    title={#1},
+    boxrule=0.4pt,
+    arc=1.5pt,
+    left=8pt, right=8pt, top=6pt, bottom=6pt,
+    before skip=1em,
+    after skip=1em,
+    before upper=\vgboxparskip
+}
+
+\newtcolorbox{remarkbox}[1][Remark]{%
+    enhanced,
+    breakable,
+    colback=vg-box-bg,
+    colframe=vg-leaf,
+    coltitle=white,
+    colbacktitle=vg-leaf,
+    fonttitle=\bfseries\small,
+    title={#1},
+    boxrule=0.4pt,
+    arc=1.5pt,
+    left=8pt, right=8pt, top=6pt, bottom=6pt,
+    before skip=1em,
+    after skip=1em,
+    before upper=\vgboxparskip
+}
+
+\newtcolorbox{highlightbox}{%
+    enhanced,
+    breakable,
+    colback=vg-box-bg,
+    colframe=vg-blossom,
+    boxrule=0pt,
+    borderline west={2pt}{0pt}{vg-blossom},
+    arc=0pt,
+    left=10pt, right=8pt, top=6pt, bottom=6pt,
+    before skip=1em,
+    after skip=1em,
+    before upper=\vgboxparskip
+}
+
+% ****************************************************************************************************
+% 11. Code listings
+% ****************************************************************************************************
+\RequirePackage{listings}
+
+\lstdefinestyle{vangogh}{
+    backgroundcolor=\color{vg-code-bg},
+    basicstyle=\small\ttfamily,
+    keywordstyle=\color{vg-heading}\bfseries,
+    commentstyle=\color{vg-leaf}\itshape,
+    stringstyle=\color{vg-branch},
+    numberstyle=\tiny\color{vg-sky},
+    numbers=left,
+    numbersep=8pt,
+    stepnumber=1,
+    showstringspaces=false,
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{vg-box-frame},
+    framesep=5pt,
+    xleftmargin=15pt,
+    framexleftmargin=15pt,
+    tabsize=4,
+    captionpos=b,
+    aboveskip=1em,
+    belowskip=0.5em
+}
+
+\lstset{style=vangogh}
+
+% ****************************************************************************************************
+% 12. Math support (light)
+% ****************************************************************************************************
+\RequirePackage{amsmath}
+\RequirePackage{amssymb}
+
+% ****************************************************************************************************
+% 13. Useful packages
+% ****************************************************************************************************
+\RequirePackage{graphicx}
+\RequirePackage{booktabs}
+\RequirePackage{tabularx}
+\RequirePackage{enumitem}
+\RequirePackage{xspace}
+
+% ****************************************************************************************************
+% 13b. Alternating row shading for tables
+% ****************************************************************************************************
+\definecolor{vg-row-shade}{HTML}{F4F0EB}  % reuse the cream tint from boxes
+
+% Patch tabular so every other row is lightly shaded.
+% Uses etoolbox (already loaded) to hook into the tabular environment.
+\AtBeginEnvironment{tabular}{%
+    \rowcolors{2}{}{vg-row-shade}%
+}
+
+\setlist{itemsep=0.3em, parsep=0pt}
+
+% ****************************************************************************************************
+% 14. Compact report header — title block + inline table of contents
+% ****************************************************************************************************
+\newcommand{\vgtitlepage}[4]{%
+    % #1 = title, #2 = subtitle, #3 = author, #4 = date
+    \thispagestyle{plain}
+    \begin{center}
+        \vspace*{0.5cm}
+        {\color{vg-rule}\rule{\textwidth}{0.6pt}}\\[1em]
+        {\color{vg-heading}\LARGE\spacedsc{#1}}\\[0.6em]
+        {\color{vg-branch}\large #2}\\[1em]
+        {\color{vg-rule}\rule{\textwidth}{0.6pt}}\\[0.8em]
+        {\large #3\hspace{1.5em}%
+         \textcolor{vg-sky}{\textbullet}%
+         \hspace{1.5em}#4}
+    \end{center}
+    \vspace{2em}
+}
+
+% Inline TOC — no page break, no chapter heading
+\newcommand{\vgtoc}{%
+    \begingroup
+    \color{vg-heading}\Large\spacedsc{Contents}%
+    \endgroup
+    \vspace{0.3em}%
+    \par\noindent{\color{vg-rule}\rule{\textwidth}{0.4pt}}%
+    \vspace{0.6em}%
+    \@starttoc{toc}%
+}
+
+\endinput

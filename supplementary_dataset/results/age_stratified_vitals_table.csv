@@ -1,0 +1,4 @@
+age_group,n_under_triaged,pct_all_vitals_normal,pct_news2_ge_5,pct_shock_gt_1,mean_true_acuity,mean_pred_acuity,mean_heartrate,mean_sbp,mean_dbp,mean_resprate,mean_o2sat,mean_temperature
+18-30,15345,0.03,2.64,1.79,2.46,3.51,86.09,128.76,76.9,17.02,99.21,98.09
+31-65,33732,0.02,3.6,1.4,2.23,3.27,84.15,135.34,82.48,17.25,98.69,97.98
+66+,14521,0.01,5.63,1.25,1.91,2.94,79.89,142.2,74.3,17.53,97.91,97.91

@@ -1,0 +1,123 @@
+% ****************************************************************************************************
+% Chapter 12: Limitations and Future Work
+% ****************************************************************************************************
+
+\chapter{Limitations and Future Work}
+\label{ch:limitations}
+
+A long research project inevitably accumulates more limitations than its individual chapters can address. Some limitations are mentioned in passing and then left behind. Others become visible only at the end, when the full pattern of the work comes into view. This chapter is the place where those limitations are consolidated. It is also the place for the honest question that any reader might ask after reading the preceding eleven chapters: what would a more comprehensive version of this project do differently, and what gaps should a deploying institution close before taking any of the methods seriously?
+
+I organise the limitations into three categories. First, limitations of the data, what MIMIC-IV-ED does and does not contain, what my filtering and feature engineering leave on the table, and what the synthetic Kaggle data ultimately taught me about the limits of competition-graded benchmarks. Second, limitations of the methodology, choices I made during modelling, features I did not engineer, analyses I did not run. Third, limitations of scope, what this project does not attempt at all, including everything downstream of model training that matters for a real deployment.
+
+I close with future work: a prioritised set of directions that could extend this work, grouped by how much additional effort each would require.
+
+\section{Limitations of the Data}
+
+My real clinical results come from MIMIC-IV-ED, a single institution's emergency department records. This is the strongest methodological limitation of my work, and it shapes many downstream ones.
+
+\paragraph{Single-institution validation.} Beth Israel Deaconess Medical Center is a large urban academic medical centre with a Level-I trauma designation in the northeast United States. Its case mix, triage practice, patient demographics, and documentation conventions are specific to that institution. A model trained on BIDMC data will have learned those institution-specific patterns, some of which generalise to other EDs, and some of which do not. The rates I report, including the headline Cohen's kappa of $0.701$, should be read as specific to this institution and not presumed to hold elsewhere. External validation on at least one additional institution would be the single most valuable follow-up, and I regret that it did not fit in my timeline.
+
+\paragraph{Class-five imbalance is structural.} As discussed in Chapter~\ref{ch:results}, ESI-5 patients make up $0.26\%$ of my cohort, roughly 1{,}100 patients out of 418{,}100. This is not a statistical anomaly; it is a consequence of BIDMC's institutional role. Patients who would be unambiguously ESI-5 (non-urgent, requiring no ED resources) rarely present to a tertiary academic medical centre's ED in the first place; they go to urgent care clinics, primary care, or ambulatory centres. My F1 of $0.26$ on this class is constrained by sample size and by the fact that the ESI-5 patients I do see are a peculiar subset of the broader ESI-5 population (misrouted walk-ins, atypical presentations). A dataset from a community hospital or an urgent care clinic would look very different on ESI-5 and might produce a much better F1 there without changing anything else in my pipeline.
+
+\paragraph{Labels are not ground truth.} Throughout this report I have treated the recorded ESI label as the target to predict. But these labels were themselves produced by triage nurses under the same conditions of time pressure and incomplete information that make human triage unreliable in the first place. The Mirhaghi meta-analysis I cite as the human-reliability benchmark ($\kappa = 0.694$ on live patients) is precisely the noise floor of the labels I am training on. A model that achieves $\kappa = 0.701$ against these labels is matching their reliability, not exceeding the underlying clinical truth. There is no way, given my data, to evaluate my model against anything other than the labels it was trained to reproduce. A prospective study that cross-validated against expert consensus or clinical outcomes would give a fundamentally different picture.
+
+\paragraph{Race mapping is incomplete.} The MIMIC-IV-ED \texttt{race} field has 33 distinct values reflecting rich self-reported ethnic identification. My aggregation dictionary collapsed these to five categories, WHITE, BLACK, ASIAN, HISPANIC, OTHER, through substring matching that captured only the base strings. Patients coded as ``HISPANIC/LATINO - PUERTO RICAN,'' ``ASIAN - CHINESE,'' ``BLACK/CAPE VERDEAN,'' and many other sub-categorisations fell through to ``OTHER'' rather than their intended parent category. This flaw substantially undercounts minority populations and inflates the ``OTHER'' bucket. My finding that age dominates race as the disparity axis is robust to this issue, the age effect is far larger than any plausible race effect, even with correct mapping. But the race-specific numbers in Chapter~\ref{ch:fairness} should be treated as preliminary. A follow-up analysis with a complete mapping would be straightforward to run on the saved outputs.
+
+\paragraph{Two variables I would have liked: GCS and supplemental oxygen.} Both NEWS2 and qSOFA, the two clinical composite scores I use as features, are missing components due to data availability. NEWS2 is missing the supplemental oxygen flag and the AVPU consciousness level; qSOFA is missing altered mental status (which requires a GCS assessment not present in MIMIC's triage data). Both of these omissions reduce the composite scores to partial versions of what they would be in a hospital system that records them. A more comprehensive clinical dataset would produce measurably better composite-score features.
+
+\paragraph{Chief complaint text is terse.} Real ED chief complaints are short, typically fewer than ten words, often abbreviated (``pt c/o abd pain NOS,'' ``S/P fall,'' ``mvc''). This terseness is why even fine-tuned Bio\_ClinicalBERT only improves macro F1 by about $0.03$ over frozen embeddings (Chapter~\ref{ch:embeddings}): there is not much text per patient to extract signal from. A triage note that included the nurse's free-text assessment in addition to the chief complaint would carry substantially more information, but is not what my data source provides.
+
+\paragraph{Synthetic competition data is not a scientific benchmark.} I documented the severity-keyword leakage in the Kaggle synthetic data in Chapter~\ref{ch:discovery}. The broader lesson is that rubric-graded competition data, when synthesised rather than drawn from real records, is not a robust benchmark for clinical ML. The specific failure mode, labels encoded in the feature text, is avoidable in principle but requires careful attention during data generation. I cannot know whether future iterations of the Triagegeist competition would use a more robust synthetic pipeline.
+
+\section{Limitations of the Methodology}
+
+Beyond the data, several of my methodological choices involved trade-offs that a more comprehensive project would revisit.
+
+\paragraph{SHAP is computed on a single model, not the blend.} TreeSHAP requires a single tree ensemble; my production pipeline uses a blend of five. The SHAP attributions in Chapter~\ref{ch:explainability} therefore describe the baseline LightGBM member of the blend (macro F1 $= 0.556$), not the full production model (macro F1 $= 0.597$). The feature importances are broadly consistent, but the specific attributions for individual predictions might differ if computed on the blend itself. Kernel SHAP, which is model-agnostic, could in principle be used on the blend but is substantially more expensive to run.
+
+\paragraph{SHAP interaction values were not computed.} The TreeSHAP framework can produce pairwise feature interaction attributions that quantify how combinations of features contribute jointly. I attempted this computation on a subsample but did not succeed due to memory constraints on the CPU compute node. A deployment that required regulatory audit-level explainability would likely need this analysis.
+
+\paragraph{Embedding components have no semantic interpretation.} The single most important feature in the SHAP global ranking is \texttt{emb\_pca\_0}, a PCA component of the fine-tuned Bio\_ClinicalBERT embedding. I did not perform a systematic post-hoc analysis mapping this component (or the others in the top 20) back to the chief complaint text. Such an analysis, clustering patients by embedding value, examining the characteristic complaints in each cluster, is straightforward to run on the saved outputs and would substantially strengthen the explainability story. It is the single largest interpretability gap in my work.
+
+\paragraph{No automation-bias or clinician-interaction study.} My system is explicitly designed to produce a recommendation that a clinician can accept, modify, or override. Whether clinicians would actually exercise that override authority, or whether automation bias would lead them to accept the model's predictions uncritically, is an empirical question that can only be answered through deployment studies. The EU AI Act's Article 14 requirement for human oversight is not satisfied simply by designing the system for oversight; it requires evidence that oversight functions in practice.
+
+\paragraph{Feature engineering for young patients was incomplete.} The age-adjusted features I introduced in Chapter~\ref{ch:fairness} reduce the age-disparity ratio substantially, but the comparison I present is single-model (augmented F1 $= 0.5569$) against single-model baseline (F1 $= 0.5562$), not the full blend. A fair blend-versus-blend comparison with the augmented features would strengthen the argument, and may reveal larger or smaller effects than my single-model ablation suggests.
+
+\paragraph{No attention-based text explanation.} My ClinicalBERT fine-tuning pipeline uses mean pooling over the final hidden layer, discarding the attention weights that could, in principle, show which tokens in a chief complaint most influenced the embedding. Extracting and visualising attention patterns is straightforward, one forward pass with \texttt{output\_attentions=True}, and would complement the SHAP analysis with token-level explainability. I simply did not do it.
+
+\paragraph{No bootstrap confidence intervals on headline metrics.} The macro F1 of $0.597$ and Cohen's $\kappa$ of $0.701$ are point estimates from out-of-fold predictions on 418,100 samples. The per-fold standard deviation of F1 is approximately $0.006$, so the sampling uncertainty is small in absolute terms, but I did not compute proper bootstrap confidence intervals. A follow-up would resample the out-of-fold predictions and report 95\% CIs on all headline metrics, the saved \texttt{.npy} arrays of OOF probabilities and true labels make this straightforward to do post-hoc.
+
+\paragraph{Calibration metrics beyond F1 were not computed.} As noted in Chapter~\ref{ch:calibration}, the standard measures of calibration quality (Brier score, Expected Calibration Error, log loss) were not computed on either calibrated or uncalibrated probabilities. A comprehensive calibration analysis requires these numbers.
+
+\paragraph{No prospective validation of compensated shock.} My Chapter~\ref{ch:fairness} interpretation of the age disparity as reflecting compensated shock is consistent with the clinical literature but is not independently validated. A proper test would require linking MIMIC-IV-ED ED visits to downstream outcomes (mortality, ICU admission, time to intervention) and showing that young patients I classify as ``deceptively normal-appearing'' have worse outcomes than their triage labels would suggest. This is a valuable analysis I did not attempt.
+
+\paragraph{External concept validation was absent.} Related to the single-institution issue: I did not validate that the specific feature relationships the model has learned, the shock index thresholds, the NEWS2 weightings, the compensated-shock patterns, generalise to non-BIDMC populations. Some relationships are likely universal (basic vital-sign physiology); others may be institution-specific (triage documentation conventions). Only external data could distinguish the two.
+
+\section{Limitations of Scope}
+
+The preceding limitations are about the work I did. There is a broader category of limitations about work I did not do, because it was outside the project's scope from the beginning.
+
+\paragraph{No prospective clinical study.} This is a retrospective analysis of existing records. Whether the model would perform as advertised when deployed in a real ED, with the actual patient population, triage workflow, and clinical context of a specific hospital, is unknown and unknowable from this work alone. Prospective evaluation is an order of magnitude more expensive than retrospective evaluation but is the only way to confirm that an ML triage system produces real clinical benefit.
+
+\paragraph{No cost-effectiveness analysis.} I have discussed the safety-accuracy trade-off in technical terms (the Pareto frontier in Chapter~\ref{ch:safety}) and in clinical-policy terms (the ACS-COT 10:1 asymmetry). I have not attempted a proper cost-effectiveness analysis: how many quality-adjusted life years does the system save per dollar of deployment cost? What is the incremental cost-effectiveness ratio compared to current human-only triage? These are the analyses that matter for health-system procurement decisions and were outside my scope.
+
+\paragraph{No user-interface design.} A model is not a product. Deploying my system would require a clinical decision-support interface that presents predictions, confidence estimates, and explanations in a way that supports (rather than disrupts) triage workflow. I have designed no such interface and have not studied how clinicians would interact with one.
+
+\paragraph{No monitoring or retraining strategy.} A deployed clinical ML system must be monitored in production, for performance drift, for emerging bias, for incidents. It must be retrained periodically as clinical practice evolves. I have discussed neither the monitoring plan nor the retraining cadence that a deployment would require.
+
+\paragraph{No legal or compliance review.} Beyond my technical mapping to the EU AI Act's Articles 9, 10, 13, and 14 in Chapter~\ref{ch:explainability}, I have not consulted legal experts on what full compliance would entail. The Medical Devices Regulation (MDR 2017/745) may also apply; HIPAA considerations would apply to any US deployment; national-level regulations vary. A real deployment would require extensive legal review that I have not undertaken.
+
+\paragraph{No integration with existing hospital systems.} A triage ML model cannot operate in isolation; it must integrate with the hospital's electronic health record, its triage workstation software, its dashboarding systems, and its audit infrastructure. Integration engineering is typically the largest practical barrier to deploying ML in clinical settings, and I have not addressed it at all.
+
+\section{What a Follow-Up Project Would Do}
+
+Not all the limitations above are equal. Some are easily addressed with modest follow-up effort; others require substantial additional resources. I list the main follow-up directions here, roughly prioritised by the ratio of expected scientific value to additional effort.
+
+\subsection*{Tier 1, Low-effort, high-value follow-ups}
+
+These could be completed within a few weeks of additional work using the saved outputs of the current project.
+
+\begin{itemize}
+ \item \textbf{Bootstrap confidence intervals} on all headline metrics, using the saved \texttt{.npy} arrays of OOF predictions and true labels.
+ \item \textbf{Brier score, ECE, and log loss} computed from the same arrays, for both calibrated and uncalibrated probabilities.
+ \item \textbf{Complete the race mapping} and re-run the bias audit to produce race-stratified disparity rates that reflect the full MIMIC cohort.
+ \item \textbf{Post-hoc interpretation of \texttt{emb\_pca\_0}}: cluster patients by the value of the top embedding component and produce a descriptive summary of what chief complaints appear in each cluster.
+ \item \textbf{Attention visualisations} from the fine-tuned ClinicalBERT, highlighting which tokens in the chief complaint drive the embedding.
+ \item \textbf{Subgroup-stratified calibration}: compute reliability diagrams separately by age and race subgroups to check whether calibration errors are uniformly distributed.
+\end{itemize}
+
+\subsection*{Tier 2, Medium-effort extensions}
+
+These would require additional computation, additional datasets, or non-trivial additional analysis.
+
+\begin{itemize}
+ \item \textbf{External validation on a second institution.} The eICU Collaborative Research Database or NHAMCS would be the natural candidates. Both would require additional credentialed access.
+ \item \textbf{SHAP interaction values} on a tractable subsample, possibly requiring memory-optimised computation or a different library.
+ \item \textbf{Prospective outcome linkage} for the compensated-shock hypothesis: join MIMIC-IV-ED triage records with ICU admissions, in-hospital mortality, and time-to-intervention outcomes to test whether the age disparity predicts worse outcomes.
+ \item \textbf{Blend-level augmented feature evaluation} to replicate the Chapter~\ref{ch:fairness} finding that age-adjusted features close the disparity at no F1 cost.
+ \item \textbf{Counterfactual explanations} to complement SHAP, using one of the several published methods for generating minimum-edit feature changes that flip a classification.
+ \item \textbf{Ordinal deep learning models} (CORAL, CORN) as a comparison baseline, testing whether specialised ordinal architectures outperform gradient-boosted trees on this task.
+\end{itemize}
+
+\subsection*{Tier 3, High-effort deployment-oriented work}
+
+These are the steps that would move the research toward a deployable system. They are substantially more expensive and would typically be undertaken by a health-system partner rather than a research team alone.
+
+\begin{itemize}
+ \item \textbf{Prospective clinical validation study} in at least one emergency department, comparing model-assisted triage against standard practice on patient outcomes.
+ \item \textbf{Clinical decision-support interface design} with clinician feedback and usability evaluation, integrated with the deploying hospital's EHR.
+ \item \textbf{Cost-effectiveness analysis} with quality-adjusted life-year estimates, based on the prospective study data.
+ \item \textbf{Full EU AI Act compliance documentation}, including risk management system, data governance documentation, user instructions, and audit mechanisms.
+ \item \textbf{Post-deployment monitoring infrastructure} for performance, bias, and incident tracking, with defined retraining triggers.
+ \item \textbf{Multi-institution generalisation study} across multiple health systems with different case mixes, demographic compositions, and triage conventions.
+\end{itemize}
+
+\section{The Honest Position}
+
+Taking all of these limitations together: my work is one contribution to a much larger problem.
+
+What I have produced is a retrospective analysis of one institution's emergency department data, demonstrating that a machine learning system built from standard components, gradient-boosted tree ensembles, a fine-tuned clinical language model, stratified cross-validation, post-hoc threshold calibration, can match the reliability of human triage decisions as measured against the same labels those humans produced. Along the way I have identified and investigated a specific form of label leakage in the synthetic competition dataset that motivated my pivot to real clinical data; I have compared two strategies for encoding clinical risk asymmetry and found them to be substitute rather than complementary; I have audited my model's fairness across demographic subgroups and found that age, not race, is the dominant disparity axis; and I have mapped my work to the relevant articles of the European AI Act.
+
+Each of these is a contribution of sorts, but individually or collectively they do not amount to a clinical deployment. The distance between a research demonstration and a deployed system is substantial, and much of that distance consists of work that only a health-system partner can undertake. What this project demonstrates is that the technical machinery for regulator-aware clinical ML triage can be assembled by a small team. What it does not demonstrate is that such a system will actually improve patient outcomes in practice. That question belongs to a different kind of study.
+
+The next chapter offers a more personal reflection on what the project taught me about research methodology, the integration of machine learning into clinical reasoning, and the use of language models as research tools. It is partly a scientific postscript and partly a methodological one. It is the last chapter before the references.
