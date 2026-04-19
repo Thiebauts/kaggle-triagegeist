@@ -139,6 +139,8 @@ TreeSHAP was computed on a 20,000-patient stratified subsample of the LightGBM b
 
 **Full source code and reproduction instructions: <https://github.com/Thiebauts/kaggle-triagegeist>**
 
+A long-form LaTeX report (`report/triagegeist_report.pdf`, ~125 pages) in the repository covers full methodology, all ablations, and chapter-level discussion.
+
 The `triagegeist/` Python package is importable with no hard-coded paths. MIMIC-IV-ED is accessed under the PhysioNet DUA and is not redistributed; instructions in `data/README.md`. The full MIMIC pipeline runs end-to-end on Azure ML for roughly $22 (see `azure/AZURE_SETUP.md`). The Kaggle notebook reads pre-computed results from the supplementary dataset and does not require PhysioNet access.
 
 ## 8. References
