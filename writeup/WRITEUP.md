@@ -12,11 +12,11 @@ Most published ML triage systems predict *binary* outcomes (mortality, ICU, hosp
 
 ## 2. Data & methodology
 
-**Two datasets, two purposes.** Kaggle competition data (80,000 train + 20,000 test) for submission; MIMIC-IV-ED (Xie 2022; 418,100 real ED visits from Beth Israel Deaconess Medical Center) for honest clinical validation under the PhysioNet Credentialed DUA. No patient-level data is redistributed.
+**Two datasets, two purposes.** Kaggle competition data (80,000 train + 20,000 test) for submission; MIMIC-IV-ED (Xie 2022; 418,100 real ED visits from Beth Israel Deaconess Medical Center) for honest clinical validation under the PhysioNet Credentialed DUA. No patient-level data is redistributed. The ESI distributions of the two sources differ markedly (figure below).
 
 ![ESI distribution: Kaggle synthetic vs MIMIC-IV-ED](figures/class_distribution_comparison.png)
 
-**Synthetic leakage discovery.** An early audit of the Kaggle `chief_complaint_raw` field revealed a synthetic-generation fingerprint: severity keywords are near-disjoint across acuity levels ("mild" in 22% of ESI-4/5 and 0% of ESI-1/2/3; "severe" and "massive" concentrate in ESI-1/2; "moderate" peaks in ESI-3). Exact-match analysis shows **99.8% of test complaints appear verbatim in training**. Any NLP model on raw text achieves ~0.998 F1; tabular-only models plateau at ~0.873. Two results are therefore reported on the Kaggle data: a headline F1 that recovers the leakage, and an honest F1 that does not.
+**Synthetic leakage discovery.** An early audit of the Kaggle `chief_complaint_raw` field revealed a synthetic-generation fingerprint: severity keywords are near-disjoint across acuity levels (heatmap below): "mild" in 22% of ESI-4/5 and 0% of ESI-1/2/3; "severe" and "massive" concentrate in ESI-1/2; "moderate" peaks in ESI-3. Exact-match analysis shows **99.8% of test complaints appear verbatim in training**. Any NLP model on raw text achieves ~0.998 F1; tabular-only models plateau at ~0.873. Two results are therefore reported on the Kaggle data: a headline F1 that recovers the leakage, and an honest F1 that does not.
 
 ![Severity keywords by ESI level](figures/keyword_leakage_heatmap.png)
 
@@ -36,9 +36,11 @@ Most published ML triage systems predict *binary* outcomes (mortality, ICU, hosp
 | 5-model convex blend | **0.5912** | **0.702** | 0.911 | 0.70 / 0.69 / 0.77 / 0.54 / 0.26 |
 | Blend + Nelder-Mead thresholds | **0.5969** | 0.701 | 0.911 | 0.71 / 0.70 / 0.77 / 0.53 / 0.28 |
 
+Errors concentrate at adjacent acuity levels rather than in catastrophic mis-triage (matrix below).
+
 ![Confusion matrix and clinical-severity heatmap](figures/confusion_matrix_combined.png)
 
-**Human benchmark.** Mirhaghi et al. (2015) meta-analysed 19 ESI reliability studies across 6 countries (40,579 cases): pooled nurse-to-expert κ = 0.791 on scenarios but only **0.694 on live patients**; paediatric live triage as low as 0.57 (Travers 2009). My κ = 0.701 sits on the live-patient nurse-to-expert baseline, matching realistic human performance on the same task.
+**Human benchmark.** Mirhaghi et al. (2015) meta-analysed 19 ESI reliability studies across 6 countries (40,579 cases): pooled nurse-to-expert κ = 0.791 on scenarios but only **0.694 on live patients**; paediatric live triage as low as 0.57 (Travers 2009). My κ = 0.701 sits on the live-patient nurse-to-expert baseline, matching realistic human performance on the same task (forest plot below).
 
 ![Cohen's κ against published ED triage studies](figures/reliability_benchmark_forest.png)
 
@@ -62,7 +64,7 @@ The dominant fairness signal is not race or sex: it is **age**. Among high-acuit
 | 31–65 | 77,281 | 42.3% |
 | 66+ | 65,192 | 37.2% |
 
-Half of young high-acuity patients present with normal vitals: compensated-shock physiology. Under-triage is worst in the subgroup that compensates most: mean predicted acuity for under-triaged 18–30 patients is 3.51 vs a true mean of 2.46, a full level off.
+Half of young high-acuity patients present with normal vitals: compensated-shock physiology. Under-triage is worst in the subgroup that compensates most: mean predicted acuity for under-triaged 18–30 patients is 3.51 vs a true mean of 2.46, a full level off. The figure below pairs under-triage rate with dual-vital normality across age bands.
 
 ![Under-triage and vital-sign normality by age band](figures/age_undertriage_vitals_comparison.png)
 
@@ -95,11 +97,11 @@ No configuration achieves the ACS-COT 5% target without major F1 loss; the hones
 | Directional penalty, no thresholds | 0.475 | 6.8% |
 | Directional penalty + thresholds | 0.558 | 15.5% |
 
-The threshold search has no knowledge of clinical harm asymmetry. **Institutions must pick one safety lever at deployment, not both.**
+The threshold search has no knowledge of clinical harm asymmetry. **Institutions must pick one safety lever at deployment, not both** (Pareto plot below).
 
 ![Pareto: training-weight vs post-hoc threshold](figures/pareto_training_vs_threshold.png)
 
-**Single-axis audit.** Disaggregating under-triage by age, sex, and race separately shows age as the dominant disparity axis: 1.71× between the 18–30 band (18.94% UT) and the 80+ band (11.07% UT). Sex disparity is negligible (1.02×). Race disparity is 1.30×, but the race-category mapping used in this audit is incomplete (33 source strings collapsed to 5 categories by substring matching, with several routed to OTHER), so the race-level numbers are flagged as preliminary and not presented as a primary finding. Intersectional sub-analyses are deferred to external validation where race coding can be audited against ground truth.
+**Single-axis audit.** Disaggregating under-triage by age, sex, and race separately shows age as the dominant disparity axis: 1.71× between the 18–30 band (18.94% UT) and the 80+ band (11.07% UT). Sex disparity is negligible (1.02×). Race disparity is 1.30×, but the race-category mapping used in this audit is incomplete (33 source strings collapsed to 5 categories by substring matching, with several routed to OTHER), so the race-level numbers are flagged as preliminary and not presented as a primary finding. Intersectional sub-analyses are deferred to external validation where race coding can be audited against ground truth. The figure below quantifies the single-axis disparities.
 
 ![Under-triage by age band: standard vs 2.5× asymmetric threshold](figures/bias_audit_disparities.png)
 
@@ -107,7 +109,7 @@ The threshold search has no knowledge of clinical harm asymmetry. **Institutions
 
 TreeSHAP was computed on a 20,000-patient stratified subsample of the LightGBM blend component. Per-ESI-class attribution is the natural unit for multiclass output.
 
-**Embedding dominance.** The top-attribution feature across most ESI classes is `emb_pca_0` (the first principal component of fine-tuned ClinicalBERT embeddings), beating every vital sign. This reflects a known trade-off with dense text embeddings: they carry signal that keyword features cannot, but do not decompose into named clinical concepts.
+**Embedding dominance.** The top-attribution feature across most ESI classes is `emb_pca_0` (the first principal component of fine-tuned ClinicalBERT embeddings), beating every vital sign. This reflects a known trade-off with dense text embeddings: they carry signal that keyword features cannot, but do not decompose into named clinical concepts (top-10 attributions per class, below).
 
 ![Top-10 SHAP features per ESI class](figures/shap_bar_combined.png)
 
