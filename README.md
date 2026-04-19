@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="writeup/triagegeist_cover.png" alt="Triagegeist" width="560">
+  <img src="writeup/triagegeist_github_banner.png" alt="Triagegeist">
 </p>
 
 # Triagegeist: Clinical Safety-Aware Emergency Triage Prediction
@@ -108,8 +108,9 @@ kaggle-triagegeist/
 │
 ├── writeup/                          Competition writeup
 │   ├── WRITEUP.md                    short-form narrative under 2000 words
+│   ├── triagegeist_github_banner.png GitHub social preview (1280x640)
+│   ├── triagegeist_github_banner.svg editable source for the banner
 │   ├── triagegeist_cover.png         Kaggle cover image (560x280)
-│   ├── triagegeist_cover_2x.png      high-DPI backup (1120x560)
 │   ├── triagegeist_cover.svg         editable source for the cover
 │   └── figures/                      8 PNGs referenced by WRITEUP.md
 │

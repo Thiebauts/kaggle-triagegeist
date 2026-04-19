@@ -1,46 +1,46 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 280" width="560" height="280">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640">
   <!-- Cream background -->
-  <rect width="560" height="280" fill="#F2EBD9"/>
+  <rect width="1280" height="640" fill="#F2EBD9"/>
 
   <!-- Top rule -->
-  <line x1="80" y1="65" x2="480" y2="65" stroke="#3D6B7E" stroke-width="1.4"/>
+  <line x1="240" y1="190" x2="1040" y2="190" stroke="#3D6B7E" stroke-width="2"/>
 
-  <!-- Title -->
-  <text x="280" y="124"
+  <!-- Title: large, letter-spaced -->
+  <text x="640" y="320"
         font-family="Georgia, 'Times New Roman', serif"
-        font-size="42" font-weight="400"
+        font-size="92" font-weight="400"
         text-anchor="middle"
         fill="#3D6B7E"
-        letter-spacing="5">TRIAGEGEIST</text>
+        letter-spacing="12">TRIAGEGEIST</text>
 
   <!-- Subtitle -->
-  <text x="280" y="160"
+  <text x="640" y="380"
         font-family="Georgia, serif"
-        font-size="13" font-style="italic"
+        font-size="26" font-style="italic"
         text-anchor="middle"
         fill="#5A5147">Clinical Safety-Aware Emergency Triage Prediction</text>
 
   <!-- Bottom rule -->
-  <line x1="80" y1="190" x2="480" y2="190" stroke="#3D6B7E" stroke-width="1.4"/>
+  <line x1="240" y1="440" x2="1040" y2="440" stroke="#3D6B7E" stroke-width="2"/>
 
   <!-- Author line with gold dot accent -->
-  <text x="200" y="226"
+  <text x="500" y="510"
         font-family="Georgia, serif"
-        font-size="14"
+        font-size="28"
         text-anchor="end"
         fill="#3A3530">Thiebaut Schirmer</text>
-  <circle cx="280" cy="221" r="4" fill="#C4A882"/>
-  <text x="360" y="226"
+  <circle cx="640" cy="502" r="8" fill="#C4A882"/>
+  <text x="780" y="510"
         font-family="Georgia, serif"
-        font-size="14"
+        font-size="28"
         text-anchor="start"
         fill="#3A3530">April 2026</text>
 
   <!-- Footer -->
-  <text x="280" y="255"
+  <text x="640" y="560"
         font-family="Georgia, serif"
-        font-size="10" font-style="italic"
+        font-size="18" font-style="italic"
         text-anchor="middle"
         fill="#8A7F6E">Triagegeist · Laitinen-Fredriksson Foundation</text>
 </svg>
